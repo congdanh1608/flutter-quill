@@ -1,7 +1,10 @@
 // lib/common/utils/html_utils.dart
 
 String reformatHtmlBeforeDelta(String html) {
-    html = html.replaceAll('</p>', '</p>\n');
+    html = html.replaceAllMapped(
+        RegExp(r'<\/p>', caseSensitive: false),
+            (_) => '<br/>',
+    );
 
     cssColorMap.forEach((name, hex) {
         html = html.replaceAllMapped(
