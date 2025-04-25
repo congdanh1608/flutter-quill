@@ -36,6 +36,7 @@ class QuillController extends ChangeNotifier {
     this.onSelectionCompleted,
     this.onSelectionChanged,
     this.readOnly = false,
+    this.maxLength,
   })
       : _document = document,
         _selection = selection;
@@ -263,7 +264,12 @@ class QuillController extends ChangeNotifier {
 
   ///Danh updated
   void Function(int index, int len, Object data, ChangeSource source)? onReplacedText;
-
+  final int? maxLength;
+  bool canInsert(String text) {
+    if (maxLength == null) return true;
+    final currentLength = document.toPlainText().length;
+    return currentLength + text.length <= maxLength!;
+  }
 
   /// clear editor
   void clear() {
@@ -283,6 +289,15 @@ class QuillController extends ChangeNotifier {
         bool isInputClient = false,
       }) {
     assert(data is String || data is Embeddable || data is Delta);
+
+    if (maxLength != null && data is String) {
+      final currentLength = document.toPlainText().length;
+      final newTextLength = data.length - len;
+      final totalLength = currentLength + newTextLength;
+      if (data.length > availableLength) {
+        data = safeSubstring(data, availableLength);
+      }
+    }
 
     if (isInputClient && data is String && data.length == 1) {
       onReplacedText?.call(index, len, data, ChangeSource.local);
@@ -349,6 +364,21 @@ class QuillController extends ChangeNotifier {
       notifyListeners();
     }
     ignoreFocusOnTextChange = false;
+  }
+
+  String safeSubstring(String text, int max) {
+    int count = 0;
+    final buffer = StringBuffer();
+    for (var rune in text.runes) {
+      if (count >= max) break;
+      if (rune == Embed.kObjectReplacementInt) {
+        buffer.writeCharCode(rune); // giữ embed
+      } else {
+        buffer.writeCharCode(rune);
+        count++;
+      }
+    }
+    return buffer.toString();
   }
 
   /// Called in two cases:
