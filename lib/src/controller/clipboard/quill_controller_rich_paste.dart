@@ -11,6 +11,9 @@ import '../../../quill_delta.dart';
 import '../../delta/delta_x.dart';
 import '../../editor_toolbar_controller_shared/clipboard/clipboard_service_provider.dart';
 import '../quill_controller.dart';
+import 'package:flutter/services.dart' show Clipboard;
+import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:html/parser.dart' as html_parser;
 
 extension QuillControllerRichPaste on QuillController {
   /// Paste the HTML into the document from [html] if not null, otherwise
@@ -22,29 +25,49 @@ extension QuillControllerRichPaste on QuillController {
     final clipboardService = ClipboardServiceProvider.instance;
 
     Future<String?> getHTML() async {
+      // Try native HTML support first
       final clipboardHtmlText = await clipboardService.getHtmlText();
-      if (clipboardHtmlText != null) {
+      if (clipboardHtmlText != null && clipboardHtmlText.trim().isNotEmpty) {
         return clipboardHtmlText;
       }
+
       final clipboardHtmlFile = await clipboardService.getHtmlFile();
-      if (clipboardHtmlFile != null) {
+      if (clipboardHtmlFile != null && clipboardHtmlFile.trim().isNotEmpty) {
         return clipboardHtmlFile;
       }
+
+      // Fallback: try plain text (may still be HTML if copied from browser or docs)
+      final plainText = (await Clipboard.getData('text/plain'))?.text;
+      if (plainText != null &&
+          plainText.trim().isNotEmpty &&
+          plainText.contains('<') &&
+          plainText.contains('</')) {
+        debugPrint('[pasteHTML] Fallback using text/plain as HTML');
+        return plainText;
+      }
+
+      debugPrint('[pasteHTML] No HTML found in clipboard');
       return null;
     }
 
     final htmlText = await getHTML();
+
     if (htmlText != null) {
+      // Use body content if available
       final htmlBody = html_parser.parse(htmlText).body?.outerHtml;
-      // ignore: deprecated_member_use_from_same_package
-      final clipboardDelta = DeltaX.fromHtml(htmlBody ?? htmlText);
+      final contentToParse = htmlBody ?? htmlText;
 
+      // Parse HTML to Delta
+      final clipboardDelta = DeltaX.fromHtml(contentToParse);
+
+      // Paste into document
       await _pasteDelta(clipboardDelta);
-
       return true;
     }
+
     return false;
   }
+
 
   // Paste the Markdown into the document from [markdown] if not null, otherwise
   /// will read it from the Clipboard in case the [ClipboardServiceProvider.instance]
