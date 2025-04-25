@@ -263,13 +263,13 @@ class QuillController extends ChangeNotifier {
   bool get hasRedo => document.hasRedo;
 
   ///Danh updated
-  void Function(int index, int len, Object data, ChangeSource source)? onReplacedText;
-
   final int? maxLength;
 
   bool canInsert(String text) {
     if (maxLength == null) return true;
-    final currentLength = document.toPlainText().length;
+    final currentLength = document
+        .toPlainText()
+        .length;
     return currentLength + text.length <= maxLength!;
   }
 
@@ -286,15 +286,14 @@ class QuillController extends ChangeNotifier {
       TextSelection? textSelection, {
         bool ignoreFocus = false,
         @experimental bool shouldNotifyListeners = true,
-
-        ///Danh updated
-        bool isInputClient = false,
       }) {
     assert(data is String || data is Embeddable || data is Delta);
 
     ///check max length
     if (maxLength != null && data is String) {
-      final currentLength = document.toPlainText().length;
+      final currentLength = document
+          .toPlainText()
+          .length;
       final availableLength = maxLength! - currentLength + len;
 
       if (availableLength <= 0) return;
@@ -302,10 +301,6 @@ class QuillController extends ChangeNotifier {
       if (data.length > availableLength) {
         data = safeSubstring(data, availableLength);
       }
-    }
-
-    if (isInputClient && data is String && data.length == 1) {
-      onReplacedText?.call(index, len, data, ChangeSource.local);
     }
 
     if (onReplaceText != null && !onReplaceText!(index, len, data)) {
