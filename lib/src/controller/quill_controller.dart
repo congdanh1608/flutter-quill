@@ -36,7 +36,8 @@ class QuillController extends ChangeNotifier {
     this.onSelectionCompleted,
     this.onSelectionChanged,
     this.readOnly = false,
-  })  : _document = document,
+  })
+      : _document = document,
         _selection = selection;
 
   factory QuillController.basic({
@@ -63,6 +64,7 @@ class QuillController extends ChangeNotifier {
   @visibleForTesting
   @internal
   QuillEditorConfig? get editorConfig => _editorConfig;
+
   @internal
   set editorConfig(QuillEditorConfig? value) {
     _editorConfig = value;
@@ -132,7 +134,8 @@ class QuillController extends ChangeNotifier {
 
   Stream<DocChange> get changes => document.changes;
 
-  TextEditingValue get plainTextEditingValue => TextEditingValue(
+  TextEditingValue get plainTextEditingValue =>
+      TextEditingValue(
         text: document.toPlainText(),
         selection: selection,
       );
@@ -184,9 +187,9 @@ class QuillController extends ChangeNotifier {
       final indent = style.value.attributes[Attribute.indent.key];
       final formatIndex = math.max(style.offset, selection.start);
       final formatLength = math.min(
-            style.offset + (style.length ?? 0),
-            selection.end,
-          ) -
+        style.offset + (style.length ?? 0),
+        selection.end,
+      ) -
           style.offset;
       Attribute? formatAttribute;
       if (indent == null) {
@@ -219,7 +222,7 @@ class QuillController extends ChangeNotifier {
   /// Returns plain text for each node within selection
   String getPlainText() {
     final text =
-        document.getPlainText(selection.start, selection.end - selection.start);
+    document.getPlainText(selection.start, selection.end - selection.start);
     return text;
   }
 
@@ -258,21 +261,32 @@ class QuillController extends ChangeNotifier {
 
   bool get hasRedo => document.hasRedo;
 
+  ///Danh updated
+  void Function(int index, int len, Object data, ChangeSource source)? onReplacedText;
+
+
   /// clear editor
   void clear() {
     replaceText(0, plainTextEditingValue.text.length - 1, '',
         const TextSelection.collapsed(offset: 0));
   }
 
-  void replaceText(
-    int index,
-    int len,
-    Object? data,
-    TextSelection? textSelection, {
-    bool ignoreFocus = false,
-    @experimental bool shouldNotifyListeners = true,
-  }) {
+
+  void replaceText(int index,
+      int len,
+      Object? data,
+      TextSelection? textSelection, {
+        bool ignoreFocus = false,
+        @experimental bool shouldNotifyListeners = true,
+
+        ///Danh updated
+        bool isInputClient = false,
+      }) {
     assert(data is String || data is Embeddable || data is Delta);
+
+    if (isInputClient && data is String && data.length == 1) {
+      onReplacedText?.call(index, len, data, ChangeSource.local);
+    }
 
     if (onReplaceText != null && !onReplaceText!(index, len, data)) {
       return;
@@ -297,15 +311,15 @@ class QuillController extends ChangeNotifier {
           delta.last.data == '\n') {
         // if all attributes are inline, shouldRetainDelta should be false
         final anyAttributeNotInline =
-            style.values.any((attr) => !attr.isInline);
+        style.values.any((attr) => !attr.isInline);
         if (!anyAttributeNotInline) {
           shouldRetainDelta = false;
         }
       }
       if (shouldRetainDelta) {
         final retainDelta = Delta()
-          ..retain(index)
-          ..retain(data is String ? data.length : 1, style.toJson());
+          ..retain(index)..retain(
+              data is String ? data.length : 1, style.toJson());
         document.compose(retainDelta, ChangeSource.local);
       }
     }
@@ -351,12 +365,11 @@ class QuillController extends ChangeNotifier {
     });
   }
 
-  void formatText(
-    int index,
-    int len,
-    Attribute? attribute, {
-    @experimental bool shouldNotifyListeners = true,
-  }) {
+  void formatText(int index,
+      int len,
+      Attribute? attribute, {
+        @experimental bool shouldNotifyListeners = true,
+      }) {
     if (len == 0 && attribute!.key != Attribute.link.key) {
       // Add the attribute to our toggledStyle.
       // It will be used later upon insertion.
@@ -472,7 +485,7 @@ class QuillController extends ChangeNotifier {
       if (insertNewline && selection.start > 0) {
         final style = document.collectStyle(selection.start - 1, 0);
         final ignoredStyles = style.attributes.values.where(
-          (s) => !s.isInline || s.key == Attribute.link.key,
+              (s) => !s.isInline || s.key == Attribute.link.key,
         );
         toggledStyle = style.removeAll(ignoredStyles.toSet());
       } else {
@@ -486,7 +499,9 @@ class QuillController extends ChangeNotifier {
 
   /// Given offset, find its leaf node in document
   Leaf? queryNode(int offset) {
-    return document.querySegmentLeafNode(offset).leaf;
+    return document
+        .querySegmentLeafNode(offset)
+        .leaf;
   }
 
   // Notify toolbar buttons directly with attributes
@@ -498,7 +513,9 @@ class QuillController extends ChangeNotifier {
   static List<OffsetValue> _pasteStyleAndEmbed = <OffsetValue>[];
 
   String get pastePlainText => _pastePlainText;
+
   Delta get pasteDelta => _pasteDelta;
+
   List<OffsetValue> get pasteStyleAndEmbed => _pasteStyleAndEmbed;
 
   /// Whether the text can be changed.
@@ -510,6 +527,7 @@ class QuillController extends ChangeNotifier {
   bool readOnly;
 
   ImageUrl? _copiedImageUrl;
+
   ImageUrl? get copiedImageUrl => _copiedImageUrl;
 
   set copiedImageUrl(ImageUrl? value) {
@@ -674,18 +692,17 @@ class QuillController extends ChangeNotifier {
     return false;
   }
 
-  void replaceTextWithEmbeds(
-    int index,
-    int len,
-    String insertedText,
-    TextSelection? textSelection, {
-    bool ignoreFocus = false,
-    @experimental bool shouldNotifyListeners = true,
-  }) {
+  void replaceTextWithEmbeds(int index,
+      int len,
+      String insertedText,
+      TextSelection? textSelection, {
+        bool ignoreFocus = false,
+        @experimental bool shouldNotifyListeners = true,
+      }) {
     final containsEmbed =
-        insertedText.codeUnits.contains(Embed.kObjectReplacementInt);
+    insertedText.codeUnits.contains(Embed.kObjectReplacementInt);
     insertedText =
-        containsEmbed ? _adjustInsertedText(insertedText) : insertedText;
+    containsEmbed ? _adjustInsertedText(insertedText) : insertedText;
 
     replaceText(index, len, insertedText, textSelection,
         ignoreFocus: ignoreFocus, shouldNotifyListeners: shouldNotifyListeners);
@@ -693,8 +710,8 @@ class QuillController extends ChangeNotifier {
     _applyPasteStyleAndEmbed(insertedText, index, containsEmbed);
   }
 
-  void _applyPasteStyleAndEmbed(
-      String insertedText, int start, bool containsEmbed) {
+  void _applyPasteStyleAndEmbed(String insertedText, int start,
+      bool containsEmbed) {
     if (insertedText == pastePlainText && pastePlainText != '' ||
         containsEmbed) {
       final pos = start;
@@ -710,7 +727,9 @@ class QuillController extends ChangeNotifier {
           if (style.isInline) {
             formatTextStyle(local, p.length!, style);
           } else if (style.isBlock) {
-            final node = document.queryChild(local).node;
+            final node = document
+                .queryChild(local)
+                .node;
             if (node != null && p.length == node.length - 1) {
               for (final attribute in style.values) {
                 document.format(local, 0, attribute);
