@@ -23,7 +23,6 @@ static String reformatHtmlBeforeDelta(String html) {
         (match) => 'background-color:${match.group(1)};',
       )
 
-      // Fix lỗi spacing khi dán inline comma
       .replaceAllMapped(
         RegExp(r'</span>\s*,\s*<span', caseSensitive: false),
         (_) => '</span>, <span',
