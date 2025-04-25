@@ -1,7 +1,6 @@
 // lib/common/utils/html_utils.dart
 
-
-static String reformatHtmlBeforeDelta(String html) {
+String reformatHtmlBeforeDelta(String html) {
   cssColorMap.forEach((name, hex) {
     html = html.replaceAllMapped(
       RegExp('color:\\s*$name;', caseSensitive: false),
@@ -33,7 +32,7 @@ static String reformatHtmlBeforeDelta(String html) {
       );
 }
 
-static const Map<String, String> cssColorMap = {
+const Map<String, String> cssColorMap = {
     "aliceblue": "#F0F8FF",
     "antiquewhite": "#FAEBD7",
     "aqua": "#00FFFF",
