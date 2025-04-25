@@ -264,7 +264,9 @@ class QuillController extends ChangeNotifier {
 
   ///Danh updated
   void Function(int index, int len, Object data, ChangeSource source)? onReplacedText;
+
   final int? maxLength;
+
   bool canInsert(String text) {
     if (maxLength == null) return true;
     final currentLength = document.toPlainText().length;
@@ -290,10 +292,13 @@ class QuillController extends ChangeNotifier {
       }) {
     assert(data is String || data is Embeddable || data is Delta);
 
+    ///check max length
     if (maxLength != null && data is String) {
       final currentLength = document.toPlainText().length;
-      final newTextLength = data.length - len;
-      final totalLength = currentLength + newTextLength;
+      final availableLength = maxLength! - currentLength + len;
+
+      if (availableLength <= 0) return;
+
       if (data.length > availableLength) {
         data = safeSubstring(data, availableLength);
       }
@@ -364,21 +369,6 @@ class QuillController extends ChangeNotifier {
       notifyListeners();
     }
     ignoreFocusOnTextChange = false;
-  }
-
-  String safeSubstring(String text, int max) {
-    int count = 0;
-    final buffer = StringBuffer();
-    for (var rune in text.runes) {
-      if (count >= max) break;
-      if (rune == Embed.kObjectReplacementInt) {
-        buffer.writeCharCode(rune); // giữ embed
-      } else {
-        buffer.writeCharCode(rune);
-        count++;
-      }
-    }
-    return buffer.toString();
   }
 
   /// Called in two cases:
@@ -478,8 +468,8 @@ class QuillController extends ChangeNotifier {
 
   @override
   void addListener(VoidCallback listener) {
-    // By using `_isDisposed`, make sure that `addListener` won't be called on a
-    // disposed `ChangeListener`
+    // By using _isDisposed, make sure that addListener won't be called on a
+    // disposed ChangeListener
     if (!_isDisposed) {
       super.addListener(listener);
     }
@@ -487,8 +477,8 @@ class QuillController extends ChangeNotifier {
 
   @override
   void removeListener(VoidCallback listener) {
-    // By using `_isDisposed`, make sure that `removeListener` won't be called
-    // on a disposed `ChangeListener`
+    // By using _isDisposed, make sure that removeListener won't be called
+    // on a disposed ChangeListener
     if (!_isDisposed) {
       super.removeListener(listener);
     }
@@ -550,10 +540,10 @@ class QuillController extends ChangeNotifier {
 
   /// Whether the text can be changed.
   ///
-  /// When this is set to `true`, the text cannot be modified
+  /// When this is set to true, the text cannot be modified
   /// by any shortcut or keyboard operation. The text is still selectable.
   ///
-  /// Defaults to `false`.
+  /// Defaults to false.
   bool readOnly;
 
   ImageUrl? _copiedImageUrl;
@@ -670,7 +660,7 @@ class QuillController extends ChangeNotifier {
     }
 
     // Only process plain text if no image/gif was pasted.
-    // Snapshot the input before using `await`.
+    // Snapshot the input before using await.
     // See https://github.com/flutter/flutter/issues/11427
     final plainText = (await Clipboard.getData(Clipboard.kTextPlain))?.text;
 
@@ -694,7 +684,7 @@ class QuillController extends ChangeNotifier {
     return false;
   }
 
-  /// Return `true` if can paste an internal image
+  /// Return true if can paste an internal image
   Future<bool> _pasteInternalImage() async {
     final copiedImageUrl = _copiedImageUrl;
     if (copiedImageUrl != null) {
@@ -720,6 +710,21 @@ class QuillController extends ChangeNotifier {
       return true;
     }
     return false;
+  }
+
+  String safeSubstring(String text, int max) {
+    int count = 0;
+    final buffer = StringBuffer();
+    for (var rune in text.runes) {
+      if (count >= max) break;
+      if (rune == Embed.kObjectReplacementInt) {
+        buffer.writeCharCode(rune); // giữ embed
+      } else {
+        buffer.writeCharCode(rune);
+        count++;
+      }
+    }
+    return buffer.toString();
   }
 
   void replaceTextWithEmbeds(int index,
