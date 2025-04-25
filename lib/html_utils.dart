@@ -1,35 +1,36 @@
 // lib/common/utils/html_utils.dart
 
 String reformatHtmlBeforeDelta(String html) {
-  cssColorMap.forEach((name, hex) {
-    html = html.replaceAllMapped(
-      RegExp('color:\\s*$name;', caseSensitive: false),
-          (_) => 'color:$hex;',
-    );
-    html = html.replaceAllMapped(
-      RegExp('background-color:\\s*$name;', caseSensitive: false),
-          (_) => 'background-color:$hex;',
-    );
-  });
+    html = html.replaceAll('</p>', '</p>\n');
 
-  return html
-      .replaceAllMapped(
+    cssColorMap.forEach((name, hex) {
+        html = html.replaceAllMapped(
+            RegExp('color:\\s*$name;', caseSensitive: false),
+                (_) => 'color:$hex;',
+        );
+        html = html.replaceAllMapped(
+            RegExp('background-color:\\s*$name;', caseSensitive: false),
+                (_) => 'background-color:$hex;',
+        );
+    });
+
+    return html
+        .replaceAllMapped(
         RegExp(r'color:\s*(#[0-9a-fA-F]{6})(?![0-9a-fA-F])'),
-        (match) => 'color:${match.group(1)};',
-      )
-      .replaceAllMapped(
+            (match) => 'color:${match.group(1)};',
+    )
+        .replaceAllMapped(
         RegExp(r'background-color:\s*(#[0-9a-fA-F]{6})(?![0-9a-fA-F])'),
-        (match) => 'background-color:${match.group(1)};',
-      )
-
-      .replaceAllMapped(
+            (match) => 'background-color:${match.group(1)};',
+    )
+        .replaceAllMapped(
         RegExp(r'</span>\s*,\s*<span', caseSensitive: false),
-        (_) => '</span>, <span',
-      )
-      .replaceAllMapped(
+            (_) => '</span>, <span',
+    )
+        .replaceAllMapped(
         RegExp(r'</span>,([^\s<])', caseSensitive: false),
-        (m) => '</span>, ${m.group(1)}',
-      );
+            (m) => '</span>, ${m.group(1)}',
+    );
 }
 
 const Map<String, String> cssColorMap = {
