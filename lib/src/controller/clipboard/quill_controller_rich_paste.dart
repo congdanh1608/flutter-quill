@@ -12,7 +12,7 @@ import '../../../html_utils.dart';
 import '../../delta/delta_x.dart';
 import '../../editor_toolbar_controller_shared/clipboard/clipboard_service_provider.dart';
 import '../quill_controller.dart';
-import 'package:flutter/services.dart'; 
+import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 
 extension QuillControllerRichPaste on QuillController {
@@ -40,7 +40,7 @@ extension QuillControllerRichPaste on QuillController {
         debugPrint('[pasteHTML] HTML file from clipboardService');
         return clipboardHtmlFile;
       }
-      
+
       final plainText = (await Clipboard.getData('text/plain'))?.text;
       if (plainText != null &&
           plainText.contains('<') &&
